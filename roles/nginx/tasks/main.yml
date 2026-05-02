@@ -1,0 +1,44 @@
+---
+- name: Install nginx on Debian/Ubuntu
+  apt:
+    name: nginx
+    state: present
+    update_cache: yes
+  when: ansible_os_family == "Debian"
+
+- name: Install nginx on RedHat/Amazon
+  yum:
+    name: nginx
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Create web root directory
+  file:
+    path: "{{ nginx_root }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
+- name: Deploy nginx config
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+  notify: Restart nginx
+
+- name: Create index page
+  copy:
+    dest: "{{ nginx_root }}/index.html"
+    content: |
+      <html>
+      <body>
+      <h1>{{ site_title }}</h1>
+      <p>Server: {{ inventory_hostname }}</p>
+      </body>
+      </html>
+
+- name: Start and enable nginx
+  service:
+    name: nginx
+    state: started
+    enabled: true
